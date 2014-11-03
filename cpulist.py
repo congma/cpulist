@@ -132,10 +132,7 @@ def _dumplines(tokenstream):
         if not flags & ISLAST:
             marks.add(depth)
         else:
-            try:
-                marks.remove(depth)
-            except KeyError:
-                pass
+            marks.discard(depth)
         if flags & ISFIRST:  # need to set position for next column
             columnwidths[depth] = len(symbol)
             indentstring = ""
