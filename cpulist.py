@@ -124,18 +124,18 @@ def _dumplines(tokenstream):
     separate lines of the drawing.
     """
     text = []
-    columnpos = collections.defaultdict(lambda: 0)
+    columnwidths = collections.defaultdict(lambda: 0)
     for token in tokenstream:
         label, depth, flags = token
         symbol = _symbol(label, flags)
         if flags & ISFIRST:
             # need to set position for next column
-            columnpos[depth + 1] = columnpos[depth] + len(symbol)
+            columnwidths[depth] = len(symbol)
             indentstring = ""
         else:  # need indent
             indent = []
             for i in xrange(depth):
-                indent.extend([" "] * (columnpos[i + 1] - columnpos[i]))
+                indent.extend([" "] * columnwidths[i])
             indentstring = "".join(indent)
         text.append("%s%s" % (indentstring, symbol))
     return ("".join(text)).splitlines(True)
