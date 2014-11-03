@@ -120,57 +120,42 @@ def _symbol(label, flags, taillen=1):
 
 
 def _dumplines(tokenstream):
-    """Draw using the input tokenstream iterator.  Return a list containing
-    separate lines of the drawing.
+    """Draw using the input tokenstream iterator.  Yield a string for each line
+    of the drawing.
     """
-    text = []
+    linebuf = []
+    marks = set()
     columnwidths = collections.defaultdict(lambda: 0)
     for token in tokenstream:
         label, depth, flags = token
         symbol = _symbol(label, flags)
-        if flags & ISFIRST:
-            # need to set position for next column
+        if not flags & ISLAST:
+            marks.add(depth)
+        else:
+            try:
+                marks.remove(depth)
+            except KeyError:
+                pass
+        if flags & ISFIRST:  # need to set position for next column
             columnwidths[depth] = len(symbol)
             indentstring = ""
         else:  # need indent
             indent = []
             for i in xrange(depth):
-                indent.extend([" "] * columnwidths[i])
+                tmpl = [" "] * columnwidths[i]
+                if i in marks:
+                    tmpl[0] = "|"
+                indent.extend(tmpl)
             indentstring = "".join(indent)
-        text.append("%s%s" % (indentstring, symbol))
-    return ("".join(text)).splitlines(True)
-
-
-def _fudge_vertical_bars(lines):
-    """Draw vertical bars to connect lines.  Return the "fudged" lines
-    joined together as a string.
-    """
-    for lineno, line in enumerate(lines):
-        vbidx = [i for (i, letter) in enumerate(line) if letter in ("|", "+")]
-        nxlineno = lineno + 1
-        try:    # try peeking next line
-            nxline = lines[nxlineno]
-        except IndexError:
-            break
-        if nxline[0] == " ":
-            firstmarks = [x for x in [nxline.find(char) for char in ("`", "|")]
-                          if x >= 0]
-            if firstmarks:
-                fmk = min(firstmarks)
-            else:
-                continue
-            newnxline = [" "] * fmk
-            for vbi in vbidx:
-                if vbi < fmk:
-                    newnxline[vbi] = "|"
-            newnxline.append(nxline[fmk:])
-            lines[nxlineno] = "".join(newnxline)
-    return "".join(lines)
+        linebuf.append("%s%s" % (indentstring, symbol))
+        if flags & ISLEAF:
+            yield "".join(linebuf)
+            linebuf = []
 
 
 def _dumpascii(tokenstream):
     """Convert tokenstream to ascii drawing."""
-    return _fudge_vertical_bars(_dumplines(tokenstream))
+    return "".join(_dumplines(tokenstream))
 
 
 def _filter_cpuinfo():
