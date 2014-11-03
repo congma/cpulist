@@ -29,7 +29,7 @@ class DictTree(object):
 
     def add(self, inputlist):
         """Add the nodes specified in inputlist to the tree.The nth element of
-        inputlist is added in the nth level.
+        inputlist is added in the (n+1)th level (root is level 0).
         """
         _add(self._root, inputlist)
         return None
@@ -50,6 +50,8 @@ class CpuTree(DictTree):
         super(CpuTree, self).__init__()
         for cpu in _part3(_filter_cpuinfo()):
             self.add(cpu)
+        # Take 1st element (string), cut at last colon, take the 2nd field
+        # (number), remove any whitespace, and parse as number.
         self._sortkey = lambda x: int(x[0].rsplit(":", 1)[1].strip())
         return None
 
@@ -60,7 +62,7 @@ class CpuTree(DictTree):
 def _add(node, inputlist):
     """Add elements in inputlist to the tree, rooted at given node.  Leaf nodes
     have an empty dictionary as child.  The nth element of inputlist is added
-    to the nth level descending from node.
+    to the (n + 1)th level descending from node.
     """
     try:
         head = inputlist[0]
@@ -73,7 +75,7 @@ def _add(node, inputlist):
 
 def _tokenize(node, sortkey=None):
     """Generator that traverses a tree in pre-order from node.
-    Each yielded value is a tuple of (nodekey, depth, flags, symbol).
+    Each yielded value is a tuple of (nodekey, depth, flags).
     flags is a bitwise-or'ed mask of following bits:
         0b001: node is a leaf
         0b010: node is first among siblings
@@ -124,23 +126,25 @@ def _dumplines(tokenstream):
     of the drawing.
     """
     linebuf = []
+    # Possible depths where a vertical connecting bar should be drawn
     marks = set()
     columnwidths = collections.defaultdict(lambda: 0)
     for token in tokenstream:
         label, depth, flags = token
-        symbol = _symbol(label, flags)
+        # Set or clear vertical bar positions (column No.) for next line.
         if not flags & ISLAST:
             marks.add(depth)
         else:
             marks.discard(depth)
+        symbol = _symbol(label, flags)
         if flags & ISFIRST:  # need to set position for next column
             columnwidths[depth] = len(symbol)
-            indentstring = ""
+            indentstring = ""   # no indentation
         else:  # need indent
             indent = []
-            for i in xrange(depth):
-                tmpl = [" "] * columnwidths[i]
-                if i in marks:
+            for i in xrange(depth):  # for each indentation level
+                tmpl = [" "] * columnwidths[i]  # "array" of blanks as filler
+                if i in marks:  # vertical bar connectors
                     tmpl[0] = "|"
                 indent.extend(tmpl)
             indentstring = "".join(indent)
@@ -163,7 +167,6 @@ def _filter_cpuinfo():
         for line in cpuinfo:
             if FILTER_RE.match(line):
                 key, sep, val = (x.strip() for x in line.partition(":"))
-                del sep
                 tmplist.append((key, int(val)))
     return tmplist
 
@@ -172,8 +175,10 @@ def _part3(inputlist):
     """Return a list of id-lists.
 
     An id-list is a representation of a particular CPU's id.  The id-list is a
-    list of ids in ascending order of each id's level. The returned list itself
-    is not necessarily sorted in any particular order.
+    list of ids in ascending order of each id's level.  Each id looks like
+    "processor: 0", "core id: 1" etc.
+
+    The returned list itself is not necessarily sorted in any particular order.
     """
     length = len(inputlist)
     tmplist = []
