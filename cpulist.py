@@ -137,8 +137,8 @@ def _dumplines(tokenstream):
         else:
             marks.discard(depth)
         symbol = _symbol(label, flags)
-        if flags & ISFIRST:  # need to set position for next column
-            columnwidths[depth] = len(symbol)
+        columnwidths[depth] = len(symbol)
+        if flags & ISFIRST:  # set position for next column
             indentstring = ""   # no indentation
         else:  # need indent
             indent = []
