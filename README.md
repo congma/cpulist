@@ -7,6 +7,9 @@ With this Python script, you get a visual display of the layout of physical
 CPUs, CPU cores and processor ID's.  It is straightforward to see which
 processors/cores are siblings.
 
+This could be useful, for example, for confining a process to CPU cores
+identified by their numeric IDs with the `taskset -c` command.
+
 Requirements
 ------------
 
