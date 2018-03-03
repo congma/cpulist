@@ -55,8 +55,8 @@ class CpuTree(DictTree):
         self._sortkey = lambda x: int(x[0].rsplit(":", 1)[1].strip())
         return None
 
-    def dumpascii(self):
-        return super(CpuTree, self).dumpascii(self._sortkey)
+    def dumpascii(self, *args, **kwargs):
+        return super(CpuTree, self).dumpascii(self._sortkey, *args, **kwargs)
 
 
 def _add(node, inputlist):
@@ -67,7 +67,7 @@ def _add(node, inputlist):
     try:
         head = inputlist[0]
     except IndexError:
-        return None
+        return
     tail = inputlist[1:]
     nextnode = node.setdefault(head, {})
     _add(nextnode, tail)
@@ -129,8 +129,7 @@ def _dumplines(tokenstream):
     # Possible depths where a vertical connecting bar should be drawn
     marks = set()
     columnwidths = collections.defaultdict(lambda: 0)
-    for token in tokenstream:
-        label, depth, flags = token
+    for label, depth, flags in tokenstream:
         # Set or clear vertical bar positions (column No.) for next line.
         if not flags & ISLAST:
             marks.add(depth)
@@ -166,7 +165,7 @@ def _filter_cpuinfo():
     with open("/proc/cpuinfo", "r") as cpuinfo:
         for line in cpuinfo:
             if FILTER_RE.match(line):
-                key, sep, val = (x.strip() for x in line.partition(":"))
+                key, _, val = (x.strip() for x in line.partition(":"))
                 tmplist.append((key, int(val)))
     return tmplist
 
