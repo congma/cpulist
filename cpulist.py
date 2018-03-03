@@ -57,7 +57,7 @@ class CpuTree(DictTree):
         label = node[0]
         # Take 1st element (string), cut at last colon, take the 2nd field
         # (number), remove any whitespace, and parse as number.
-        return int(label.rsplit(sep=":", maxsplit=1)[1].strip())
+        return int(label.rsplit(":", 1)[1].strip())
 
     def dumpascii(self, sibling_sort_key=None):  # pylint: disable=W0221
         """Return a string dump of an ascii drawing of the tree.
