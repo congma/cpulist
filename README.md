@@ -1,4 +1,8 @@
+[![Build Status](https://travis-ci.org/congma/cpulist.svg?branch=master)](https://travis-ci.org/congma/cpulist)
+
 `cpulist.py` -- display CPU affinity information as ASCII art.
+
+- - -
 
 Summary
 -------
