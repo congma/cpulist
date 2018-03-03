@@ -34,13 +34,13 @@ class DictTree(object):
         _add(self._root, inputlist)
         return None
 
-    def dumpjson(self):
-        """Return a string dump in JSON format."""
-        return json.dumps(self._root, sort_keys=True)
+    def dumpjson(self, sort_keys=True, **kwargs):
+        """Return a string dump in JSON format, with keys sorted by default."""
+        return json.dumps(self._root, sort_keys=sort_keys, **kwargs)
 
-    def dumpascii(self, *args, **kwargs):
+    def dumpascii(self, **kwargs):
         """Return a string dump of an ascii drawing of the tree."""
-        return _dumpascii(_tokenize(self._root, *args, **kwargs))
+        return _dumpascii(_tokenize(self._root, **kwargs))
 
 
 class CpuTree(DictTree):
@@ -50,13 +50,26 @@ class CpuTree(DictTree):
         super(CpuTree, self).__init__()
         for cpu in _part3(_filter_cpuinfo()):
             self.add(cpu)
+
+    @staticmethod
+    def _cpu_sort_key(node):
+        """Default sort key for presenting sibling CPU nodes."""
+        label = node[0]
         # Take 1st element (string), cut at last colon, take the 2nd field
         # (number), remove any whitespace, and parse as number.
-        self._sortkey = lambda x: int(x[0].rsplit(":", 1)[1].strip())
-        return None
+        return int(label.rsplit(sep=":", maxsplit=1)[1].strip())
 
-    def dumpascii(self, *args, **kwargs):
-        return super(CpuTree, self).dumpascii(self._sortkey, *args, **kwargs)
+    def dumpascii(self, sibling_sort_key=None):  # pylint: disable=W0221
+        """Return a string dump of an ascii drawing of the tree.
+        The optional argument "sibling_sort_key" is a callable key function
+        that specifies the order in which siblings are sorted.  If it is not
+        specified or is "None", the default order is used.
+        """
+        if sibling_sort_key is None:
+            key = self._cpu_sort_key
+        else:
+            key = sibling_sort_key
+        return super(CpuTree, self).dumpascii(sibling_sort_key=key)
 
 
 def _add(node, inputlist):
@@ -73,13 +86,14 @@ def _add(node, inputlist):
     _add(nextnode, tail)
 
 
-def _tokenize(node, sortkey=None):
+def _tokenize(node, sibling_sort_key=None):
     """Generator that traverses a tree in pre-order from node.
     Each yielded value is a tuple of (nodekey, depth, flags).
     flags is a bitwise-or'ed mask of following bits:
         0b001: node is a leaf
         0b010: node is first among siblings
         0b100: node is last among siblings (can be set with 0b010).
+    The siblings are sorted by the key function sibling_sort_key.
     """
     trackstack = []
     this = node
@@ -88,7 +102,9 @@ def _tokenize(node, sortkey=None):
     while trackstack or this:
         children = this.items()
         if children:
-            children.sort(key=sortkey, reverse=True)
+            # NOTE: Siblings are reversed because the list "trackstack"
+            # operates on the tail as a stack.
+            children.sort(key=sibling_sort_key, reverse=True)
             numchi = len(children)
             chiflags = [0] * numchi
             chiflags[0] |= ISLAST
