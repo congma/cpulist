@@ -2,7 +2,6 @@
 """Dump CPU affinity information as a tree."""
 
 
-import sys
 import collections
 import re
 import json
@@ -20,6 +19,40 @@ class DictTree(object):
     """Tree stucture implemented using dict. No need for a Node() class, but
     each key must be hashable, and sibling of the same level must be unique.
     The order of siblings is lost.
+
+    >>> t = DictTree()
+    >>> t._root
+    {}
+    >>> t.add(["food", "spam"])
+    >>> t._root
+    {'food': {'spam': {}}}
+    >>> t.add(["food", "eggs"])
+    >>> t.add(["tool", "writing", "pencil"])
+    >>> t.add(["tool", "writing", "pen"])
+    >>> t.add(["tool", "gardening", "shovel"])
+    >>> import sys
+    >>> sys.stdout.write(t.dumpascii())
+    --*-+-food-+-eggs
+        |      `-spam
+        `-tool-+-gardening---shovel
+               `-writing-+-pen
+                         `-pencil
+    >>> sys.stdout.write(t.dumpjson(indent=2, separators=(",", ": ")))
+    {
+      "food": {
+        "eggs": {},
+        "spam": {}
+      },
+      "tool": {
+        "gardening": {
+          "shovel": {}
+        },
+        "writing": {
+          "pen": {},
+          "pencil": {}
+        }
+      }
+    }
     """
 
     def __init__(self):
@@ -204,12 +237,10 @@ def _part3(inputlist):
     return tmplist
 
 
-def test():
-    """Self-test"""
-    cpus = CpuTree()
-    sys.stdout.write(cpus.dumpascii())
-    return None
-
-
 if __name__ == "__main__":
-    test()
+    import sys
+    import platform
+    if platform.system() != "Linux":
+        sys.exit(1)
+    CPUS = CpuTree()
+    sys.stdout.write(CPUS.dumpascii())
